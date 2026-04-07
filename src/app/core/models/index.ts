@@ -405,3 +405,57 @@ export interface DashboardStats {
   today_attendance_percentage: number;
   upcoming_exams: number;
 }
+
+export interface AdmissionDocument {
+  id: number;
+  application_id: number;
+  document_type: string;
+  file_name?: string;
+  file_url?: string;
+  is_verified: boolean;
+  verified_at?: string;
+  remarks?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AdmissionFee {
+  id: number;
+  application_id: number;
+  fee_type: string;
+  amount: number;
+  payment_status?: 'pending' | 'paid' | 'partial' | 'refunded';
+  payment_method?: string;
+  transaction_reference?: string;
+  paid_at?: string;
+  refunded_at?: string;
+  remarks?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PreviousAcademic {
+  id: number;
+  application_id: number;
+  institute_name: string;
+  board?: string;
+  exam_name?: string;
+  group_name?: string;
+  passing_year?: number;
+  result?: string;
+  remarks?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type ApiQueryPrimitive = string | number | boolean;
+export type ApiQueryValue =
+  | ApiQueryPrimitive
+  | readonly ApiQueryPrimitive[]
+  | null
+  | undefined;
+export type ApiQueryParams = Record<string, ApiQueryValue>;
+export type ApiMutationPayload<T = Record<string, unknown>> = Partial<T> &
+  Record<string, unknown>;
+export type ApiItemResult<T> = ApiResponse<T> | T;
+export type ApiListResult<T> = PaginatedResponse<T> | ApiResponse<T[]> | T[];
