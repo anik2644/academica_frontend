@@ -10,6 +10,7 @@ import {
   readBoolean,
   readString,
 } from '../../../core/utils/api-response.utils';
+import { PageLoaderComponent } from '../../../shared/components/page-loader/page-loader.component';
 
 interface AdmissionListRow {
   id: string;
@@ -38,28 +39,16 @@ interface FieldGroup {
 @Component({
   selector: 'app-admissions-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageLoaderComponent],
   template: `
     <section class="relative overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_100px_-60px_rgba(15,23,42,0.5)]">
       <div class="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top_left,_rgba(21,101,192,0.22),_transparent_40%),radial-gradient(circle_at_top_right,_rgba(0,137,123,0.18),_transparent_34%),linear-gradient(120deg,_#0f172a,_#1e3a8a_55%,_#0f766e)]"></div>
       <div class="relative p-6 sm:p-8">
         <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div class="max-w-3xl">
-            <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
-              <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
-              Live Admissions Workspace
-            </div>
-            <h1 class="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          <div>
+            <h1 class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               Applications
             </h1>
-            <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
-              A full admissions operations surface with live application data, instant filtering, and grouped field visibility for student, guardian, status, and payment information.
-            </p>
-          </div>
-
-          <div class="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3 text-sm text-slate-100 backdrop-blur">
-            <div class="text-xs uppercase tracking-[0.2em] text-white/60">Data Source</div>
-            <div class="mt-1 font-medium">GET /api/v1/admissions</div>
           </div>
         </div>
 
@@ -119,8 +108,12 @@ interface FieldGroup {
                 {{ listErrorMessage }}
               </div>
 
-              <div *ngIf="isListLoading" class="mt-4 space-y-3">
-                <div *ngFor="let item of [1,2,3,4]" class="h-28 animate-pulse rounded-2xl bg-slate-100"></div>
+              <div *ngIf="isListLoading" class="mt-4">
+                <app-page-loader
+                  title="Loading applications"
+                  message="Fetching the latest admission queue from the backend."
+                  [blockHeights]="[108, 108, 108, 108]"
+                ></app-page-loader>
               </div>
 
               <div *ngIf="!isListLoading" class="mt-4 space-y-3">
@@ -177,15 +170,9 @@ interface FieldGroup {
             <div class="rounded-[22px] border border-slate-200 bg-white p-4 sm:p-5">
               <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <div class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                    Application Dossier
-                  </div>
-                  <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                  <h2 class="text-2xl font-semibold tracking-tight text-slate-950">
                     {{ selectedAdmission?.studentName || 'Select an application' }}
                   </h2>
-                  <p class="mt-2 text-sm text-slate-600">
-                    Review the full admission record grouped by student identity, family data, payment, exam, and processing metadata.
-                  </p>
                 </div>
 
                 <div *ngIf="selectedAdmission" class="grid gap-2 sm:grid-cols-2">
@@ -213,8 +200,12 @@ interface FieldGroup {
                 {{ detailErrorMessage }}
               </div>
 
-              <div *ngIf="isDetailLoading" class="mt-5 space-y-4">
-                <div *ngFor="let block of [1,2,3]" class="h-44 animate-pulse rounded-2xl bg-slate-100"></div>
+              <div *ngIf="isDetailLoading" class="mt-5">
+                <app-page-loader
+                  title="Loading admission dossier"
+                  message="Retrieving the full application details and related fields."
+                  [blockHeights]="[176, 176, 176]"
+                ></app-page-loader>
               </div>
 
               <div *ngIf="!isDetailLoading && selectedDetail" class="mt-5 grid gap-4 lg:grid-cols-2">

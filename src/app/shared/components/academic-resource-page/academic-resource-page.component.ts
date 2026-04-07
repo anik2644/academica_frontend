@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
+import { PageLoaderComponent } from '../page-loader/page-loader.component';
 
 export interface AcademicResourceMetric {
   label: string;
@@ -20,7 +21,7 @@ export interface AcademicResourceColumn<T> {
 @Component({
   selector: 'app-academic-resource-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, EmptyStateComponent, PageLoaderComponent],
   template: `
     <section class="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.45)]">
       <div class="absolute inset-x-0 top-0 h-56 bg-gradient-to-r from-primary-950 via-primary-800 to-accent-700"></div>
@@ -28,24 +29,10 @@ export interface AcademicResourceColumn<T> {
       <div class="absolute right-0 top-0 h-52 w-52 rounded-full bg-accent-200/20 blur-3xl"></div>
 
       <div class="relative p-6 sm:p-8">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div class="max-w-3xl">
-            <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
-              <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
-              Live Academic Core
-            </div>
-            <h1 class="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              {{ title }}
-            </h1>
-            <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
-              {{ subtitle }}
-            </p>
-          </div>
-
-          <div class="rounded-2xl border border-white/15 bg-slate-950/25 px-4 py-3 text-sm text-slate-100 backdrop-blur">
-            <div class="text-xs uppercase tracking-[0.22em] text-white/60">Data Source</div>
-            <div class="mt-1 font-medium">{{ dataSourceLabel }}</div>
-          </div>
+        <div>
+          <h1 class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            {{ title }}
+          </h1>
         </div>
 
         <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -123,8 +110,12 @@ export interface AcademicResourceColumn<T> {
               {{ errorMessage }}
             </div>
 
-            <div *ngIf="isLoading" class="mt-5 space-y-3">
-              <div *ngFor="let row of [1, 2, 3, 4]" class="h-16 animate-pulse rounded-2xl bg-slate-100"></div>
+            <div *ngIf="isLoading" class="mt-5">
+              <app-page-loader
+                title="Loading records"
+                message="Fetching live data for this module."
+                [blockHeights]="[72, 72, 72, 72]"
+              ></app-page-loader>
             </div>
 
             <ng-container *ngIf="!isLoading">

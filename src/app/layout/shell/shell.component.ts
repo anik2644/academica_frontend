@@ -25,11 +25,6 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
           </div>
         </main>
       </div>
-
-      <!-- Footer -->
-      <footer class="border-t border-gray-200 bg-white px-6 py-4 text-center text-sm text-gray-600">
-        <p>KIT ERP v1.0.0 &#64; 2024</p>
-      </footer>
     </div>
   `,
   styles: [],

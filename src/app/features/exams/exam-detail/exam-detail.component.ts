@@ -15,7 +15,6 @@ import { extractItem, extractList, getErrorMessage, readBoolean, readNumber, rea
         <div>
           <a routerLink="/exams" class="text-sm font-medium text-primary-700 hover:text-primary-800">Back to exams</a>
           <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-950">{{ examName }}</h1>
-          <p class="mt-2 text-sm text-slate-600">Live exam dossier with core metadata, schedule lines, and recorded results.</p>
         </div>
         <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" [ngClass]="resultPublished ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
           {{ resultPublished ? 'Results Published' : 'Results Pending' }}

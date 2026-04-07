@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { SchoolManagementApiService } from '../../../core/services/school-management-api.service';
 import { extractList, getErrorMessage, readBoolean, readString } from '../../../core/utils/api-response.utils';
+import { PageLoaderComponent } from '../../../shared/components/page-loader/page-loader.component';
 
 interface ExamRow {
   id: string;
@@ -19,25 +20,14 @@ interface ExamRow {
 @Component({
   selector: 'app-exams-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, PageLoaderComponent],
   template: `
     <section class="relative overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_100px_-60px_rgba(15,23,42,0.5)]">
       <div class="absolute inset-x-0 top-0 h-56 bg-gradient-to-r from-slate-950 via-primary-900 to-accent-700"></div>
       <div class="relative p-6 sm:p-8">
         <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div class="max-w-3xl">
-            <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
-              <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
-              Live Exam Registry
-            </div>
-            <h1 class="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Exams</h1>
-            <p class="mt-3 text-sm leading-6 text-slate-200 sm:text-base">
-              A live exam board with class and academic year context, publication state, and direct access to the full exam dossier.
-            </p>
-          </div>
-          <div class="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3 text-sm text-slate-100 backdrop-blur">
-            <div class="text-xs uppercase tracking-[0.2em] text-white/60">Data Source</div>
-            <div class="mt-1 font-medium">GET /api/v1/exams</div>
+          <div>
+            <h1 class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Exams</h1>
           </div>
         </div>
 
@@ -53,8 +43,12 @@ interface ExamRow {
           {{ errorMessage }}
         </div>
 
-        <div *ngIf="isLoading" class="mt-6 space-y-3">
-          <div *ngFor="let row of [1,2,3]" class="h-24 animate-pulse rounded-2xl bg-slate-100"></div>
+        <div *ngIf="isLoading" class="mt-6">
+          <app-page-loader
+            title="Loading exams"
+            message="Fetching exam definitions and resolving class-year context."
+            [blockHeights]="[96, 96, 96]"
+          ></app-page-loader>
         </div>
 
         <div *ngIf="!isLoading" class="mt-6 grid gap-4 lg:grid-cols-2">

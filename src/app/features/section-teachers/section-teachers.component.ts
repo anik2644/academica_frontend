@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { SchoolManagementApiService } from '../../core/services/school-management-api.service';
 import { extractList, getErrorMessage, readBoolean, readString } from '../../core/utils/api-response.utils';
+import { PageLoaderComponent } from '../../shared/components/page-loader/page-loader.component';
 
 interface SectionOption {
   id: string;
@@ -23,19 +24,12 @@ interface SectionTeacherRow {
 @Component({
   selector: 'app-section-teachers',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageLoaderComponent],
   template: `
     <section class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_30px_100px_-60px_rgba(15,23,42,0.5)] sm:p-8">
       <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-        <div class="max-w-3xl">
-          <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">
-            <span class="h-2 w-2 rounded-full bg-primary-500"></span>
-            Query-based Assignment View
-          </div>
-          <h1 class="mt-5 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Section Teachers</h1>
-          <p class="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
-            This page uses the exact query pattern required by your backend: sectionId plus academicYearId.
-          </p>
+        <div>
+          <h1 class="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Section Teachers</h1>
         </div>
       </div>
 
@@ -71,8 +65,12 @@ interface SectionTeacherRow {
 
           <div *ngIf="errorMessage" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ errorMessage }}</div>
 
-          <div *ngIf="isLoading" class="mt-5 space-y-3">
-            <div *ngFor="let row of [1,2,3]" class="h-16 animate-pulse rounded-2xl bg-slate-100"></div>
+          <div *ngIf="isLoading" class="mt-5">
+            <app-page-loader
+              title="Loading assignments"
+              message="Fetching section-teacher allocations for the selected query."
+              [blockHeights]="[72, 72, 72]"
+            ></app-page-loader>
           </div>
 
           <div *ngIf="!isLoading && assignments.length" class="mt-5 overflow-hidden rounded-2xl border border-slate-200">

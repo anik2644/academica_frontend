@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { SchoolManagementApiService } from '../../core/services/school-management-api.service';
 import { extractList, getErrorMessage, readNumber, readString } from '../../core/utils/api-response.utils';
+import { PageLoaderComponent } from '../../shared/components/page-loader/page-loader.component';
 
 interface EnrollmentOption {
   id: string;
@@ -21,20 +22,13 @@ interface AttendanceRow {
 @Component({
   selector: 'app-attendance',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageLoaderComponent],
   template: `
     <section class="relative overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_100px_-60px_rgba(15,23,42,0.5)]">
       <div class="absolute inset-x-0 top-0 h-56 bg-gradient-to-r from-slate-950 via-primary-900 to-accent-700"></div>
       <div class="relative p-6 sm:p-8">
-        <div class="max-w-3xl">
-          <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
-            <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
-            Live Attendance Query
-          </div>
-          <h1 class="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Daily Attendance</h1>
-          <p class="mt-3 text-sm leading-6 text-slate-200 sm:text-base">
-            This page uses the attendance API exactly as implemented by your backend, including its required query parameters: enrollment, from date, and to date.
-          </p>
+        <div>
+          <h1 class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Daily Attendance</h1>
         </div>
 
         <div class="mt-8 grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
@@ -94,8 +88,12 @@ interface AttendanceRow {
               {{ errorMessage }}
             </div>
 
-            <div *ngIf="isLoading" class="mt-5 space-y-3">
-              <div *ngFor="let row of [1,2,3,4]" class="h-16 animate-pulse rounded-2xl bg-slate-100"></div>
+            <div *ngIf="isLoading" class="mt-5">
+              <app-page-loader
+                title="Loading attendance"
+                message="Running the attendance query against the backend."
+                [blockHeights]="[72, 72, 72, 72]"
+              ></app-page-loader>
             </div>
 
             <div *ngIf="!isLoading && attendanceRows.length" class="mt-5 overflow-hidden rounded-2xl border border-slate-200">
