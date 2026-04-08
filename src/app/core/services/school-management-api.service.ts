@@ -498,14 +498,21 @@ export class SchoolManagementApiService {
     return this.api.get(API_ENDPOINTS.parents.byId(id));
   }
 
-  createParent(payload: ApiMutationPayload<Parent>): Observable<ApiItemResult<Parent>> {
+  createParent(payload: ApiMutationPayload<Parent>, photo?: File): Observable<ApiItemResult<Parent>> {
+    if (photo) {
+      return this.api.postMultipart(API_ENDPOINTS.parents.root, payload, photo, 'photo');
+    }
     return this.api.post(API_ENDPOINTS.parents.root, payload);
   }
 
   updateParent(
     id: number | string,
-    payload: ApiMutationPayload<Parent>
+    payload: ApiMutationPayload<Parent>,
+    photo?: File
   ): Observable<ApiItemResult<Parent>> {
+    if (photo) {
+      return this.api.putMultipart(API_ENDPOINTS.parents.byId(id), payload, photo, 'photo');
+    }
     return this.api.put(API_ENDPOINTS.parents.byId(id), payload);
   }
 
@@ -523,8 +530,12 @@ export class SchoolManagementApiService {
 
   updateStudent(
     id: number | string,
-    payload: ApiMutationPayload<Student>
+    payload: ApiMutationPayload<Student>,
+    photo?: File
   ): Observable<ApiItemResult<Student>> {
+    if (photo) {
+      return this.api.putMultipart(API_ENDPOINTS.students.byId(id), payload, photo, 'profilePhoto');
+    }
     return this.api.put(API_ENDPOINTS.students.byId(id), payload);
   }
 
@@ -567,15 +578,23 @@ export class SchoolManagementApiService {
   }
 
   createTeacher(
-    payload: ApiMutationPayload<Teacher>
+    payload: ApiMutationPayload<Teacher>,
+    photo?: File
   ): Observable<ApiItemResult<Teacher>> {
+    if (photo) {
+      return this.api.postMultipart(API_ENDPOINTS.teachers.root, payload, photo, 'profilePhoto');
+    }
     return this.api.post(API_ENDPOINTS.teachers.root, payload);
   }
 
   updateTeacher(
     id: number | string,
-    payload: ApiMutationPayload<Teacher>
+    payload: ApiMutationPayload<Teacher>,
+    photo?: File
   ): Observable<ApiItemResult<Teacher>> {
+    if (photo) {
+      return this.api.putMultipart(API_ENDPOINTS.teachers.byId(id), payload, photo, 'profilePhoto');
+    }
     return this.api.put(API_ENDPOINTS.teachers.byId(id), payload);
   }
 

@@ -1,34 +1,67 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { SchoolManagementApiService } from '../../../core/services/school-management-api.service';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import {
   extractList,
   getErrorMessage,
   readString,
 } from '../../../core/utils/api-response.utils';
+import { SchoolManagementApiService } from '../../../core/services/school-management-api.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import {
   AcademicResourceColumn,
   AcademicResourceMetric,
   AcademicResourcePageComponent,
 } from '../../../shared/components/academic-resource-page/academic-resource-page.component';
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 
 interface StudentRow {
   id: string;
   studentId: string;
   fullName: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
   gender: string;
   dateOfBirth: string;
   bloodType: string;
   email: string;
-  phonePrimary: string;
+  phone: string;
+  religion: string;
+  nationality: string;
   presentAddress: string;
+  permanentAddress: string;
+  nidNumber: string;
+  passportNumber: string;
+  notes: string;
+  status: string;
   createdAt: string;
+}
+
+interface StudentFormData {
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  gender: string;
+  date_of_birth: string;
+  email: string;
+  phone: string;
+  blood_type: string;
+  religion: string;
+  nationality: string;
+  present_address: string;
+  permanent_address: string;
+  nid_number: string;
+  passport_number: string;
+  notes: string;
+  status: string;
 }
 
 @Component({
   selector: 'app-students-list',
   standalone: true,
-  imports: [CommonModule, AcademicResourcePageComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AcademicResourcePageComponent, FormModalComponent],
   template: `
     <app-academic-resource-page
       title="Students"
@@ -39,6 +72,9 @@ interface StudentRow {
       searchPlaceholder="Search by student, ID, blood type, or address"
       emptyTitle="No students found"
       emptyMessage="Student records from the backend will appear here automatically."
+      [canView]="true"
+      [canEdit]="true"
+      [canDelete]="true"
       [metrics]="metrics"
       [columns]="columns"
       [rows]="rows"
@@ -46,15 +82,144 @@ interface StudentRow {
       [errorMessage]="errorMessage"
       [searchIndex]="searchIndex"
       (refresh)="loadData()"
+      (view)="viewStudent($event)"
+      (edit)="openEditModal($event)"
+      (delete)="openDeleteModal($event)"
     ></app-academic-resource-page>
+
+    <!-- Edit Modal -->
+    <app-form-modal
+      [open]="showFormModal"
+      title="Edit Student"
+      confirmText="Update"
+      loadingText="Updating..."
+      [loading]="isSaving"
+      [wide]="true"
+      (close)="showFormModal = false"
+      (confirm)="saveForm()"
+    >
+      <div class="space-y-4">
+        <div class="grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">First Name *</span>
+            <input [(ngModel)]="formData.first_name" type="text" placeholder="First name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Middle Name</span>
+            <input [(ngModel)]="formData.middle_name" type="text" placeholder="Middle name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Last Name *</span>
+            <input [(ngModel)]="formData.last_name" type="text" placeholder="Last name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Gender</span>
+            <select [(ngModel)]="formData.gender" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <option value="">Select gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Date of Birth</span>
+            <input [(ngModel)]="formData.date_of_birth" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Status</span>
+            <select [(ngModel)]="formData.status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="graduated">Graduated</option>
+              <option value="transferred">Transferred</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Email</span>
+            <input [(ngModel)]="formData.email" type="email" placeholder="student@example.com" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Phone</span>
+            <input [(ngModel)]="formData.phone" type="text" placeholder="Phone number" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Blood Type</span>
+            <input [(ngModel)]="formData.blood_type" type="text" placeholder="e.g. A+" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Religion</span>
+            <input [(ngModel)]="formData.religion" type="text" placeholder="Religion" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Nationality</span>
+            <input [(ngModel)]="formData.nationality" type="text" placeholder="Nationality" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Present Address</span>
+            <input [(ngModel)]="formData.present_address" type="text" placeholder="Present address" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Permanent Address</span>
+            <input [(ngModel)]="formData.permanent_address" type="text" placeholder="Permanent address" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">NID Number</span>
+            <input [(ngModel)]="formData.nid_number" type="text" placeholder="National ID number" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Passport Number</span>
+            <input [(ngModel)]="formData.passport_number" type="text" placeholder="Passport number" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+        </div>
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-slate-700">Notes</span>
+          <textarea [(ngModel)]="formData.notes" rows="3" placeholder="Additional notes about this student" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea>
+        </label>
+      </div>
+    </app-form-modal>
+
+    <!-- Deactivate Confirmation -->
+    <app-form-modal
+      [open]="showDeleteModal"
+      title="Deactivate Student"
+      [subtitle]="'Are you sure you want to deactivate \\'' + (deletingRow?.fullName || '') + '\\'?'"
+      confirmText="Deactivate"
+      loadingText="Deactivating..."
+      [loading]="isDeleting"
+      [danger]="true"
+      (close)="showDeleteModal = false"
+      (confirm)="confirmDeactivate()"
+    >
+      <p class="text-sm text-slate-600">This student will be marked as inactive. They can be reactivated later if needed.</p>
+    </app-form-modal>
   `,
 })
 export class StudentsListComponent implements OnInit {
   private readonly api = inject(SchoolManagementApiService);
+  private readonly notify = inject(NotificationService);
+  private readonly router = inject(Router);
 
   isLoading = true;
   errorMessage = '';
   rows: StudentRow[] = [];
+
+  showFormModal = false;
+  showDeleteModal = false;
+  isSaving = false;
+  isDeleting = false;
+  editingRow: StudentRow | null = null;
+  deletingRow: StudentRow | null = null;
+  formData: StudentFormData = this.emptyFormData();
 
   readonly columns: AcademicResourceColumn<StudentRow>[] = [
     {
@@ -71,7 +236,7 @@ export class StudentsListComponent implements OnInit {
     {
       label: 'Contact',
       value: (row) => row.email || 'Email unavailable',
-      secondary: (row) => row.phonePrimary || row.presentAddress || 'Contact footprint unavailable',
+      secondary: (row) => row.phone || row.presentAddress || 'Contact footprint unavailable',
     },
     {
       label: 'Location & Created',
@@ -150,25 +315,126 @@ export class StudentsListComponent implements OnInit {
     });
   }
 
+  viewStudent(row: StudentRow): void {
+    this.router.navigate(['/students', row.id]);
+  }
+
+  openEditModal(row: StudentRow): void {
+    this.editingRow = row;
+    this.formData = {
+      first_name: row.firstName,
+      middle_name: row.middleName,
+      last_name: row.lastName,
+      gender: row.gender,
+      date_of_birth: row.dateOfBirth,
+      email: row.email,
+      phone: row.phone,
+      blood_type: row.bloodType,
+      religion: row.religion,
+      nationality: row.nationality,
+      present_address: row.presentAddress,
+      permanent_address: row.permanentAddress,
+      nid_number: row.nidNumber,
+      passport_number: row.passportNumber,
+      notes: row.notes,
+      status: row.status,
+    };
+    this.showFormModal = true;
+  }
+
+  openDeleteModal(row: StudentRow): void {
+    this.deletingRow = row;
+    this.showDeleteModal = true;
+  }
+
+  saveForm(): void {
+    if (!this.formData.first_name || !this.formData.last_name) {
+      this.notify.warning('Please fill all required fields.');
+      return;
+    }
+    if (!this.editingRow) return;
+
+    this.isSaving = true;
+    const payload: Record<string, unknown> = { ...this.formData };
+
+    this.api.updateStudent(this.editingRow.id, payload).subscribe({
+      next: () => {
+        this.notify.success('Student updated.');
+        this.showFormModal = false;
+        this.isSaving = false;
+        this.loadData();
+      },
+      error: (error) => {
+        this.notify.error(getErrorMessage(error, 'Failed to update student.'));
+        this.isSaving = false;
+      },
+    });
+  }
+
+  confirmDeactivate(): void {
+    if (!this.deletingRow) return;
+    this.isDeleting = true;
+    this.api.deactivateStudent(this.deletingRow.id).subscribe({
+      next: () => {
+        this.notify.success('Student deactivated.');
+        this.showDeleteModal = false;
+        this.isDeleting = false;
+        this.loadData();
+      },
+      error: (error) => {
+        this.notify.error(getErrorMessage(error, 'Failed to deactivate student.'));
+        this.isDeleting = false;
+      },
+    });
+  }
+
+  private emptyFormData(): StudentFormData {
+    return {
+      first_name: '',
+      middle_name: '',
+      last_name: '',
+      gender: '',
+      date_of_birth: '',
+      email: '',
+      phone: '',
+      blood_type: '',
+      religion: '',
+      nationality: '',
+      present_address: '',
+      permanent_address: '',
+      nid_number: '',
+      passport_number: '',
+      notes: '',
+      status: 'active',
+    };
+  }
+
   private mapStudent(item: unknown): StudentRow {
-    const fullName = [
-      readString(item, 'firstName', 'first_name'),
-      readString(item, 'middleName', 'middle_name'),
-      readString(item, 'lastName', 'last_name'),
-    ]
-      .filter(Boolean)
-      .join(' ');
+    const firstName = readString(item, 'firstName', 'first_name');
+    const middleName = readString(item, 'middleName', 'middle_name');
+    const lastName = readString(item, 'lastName', 'last_name');
+    const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
 
     return {
       id: readString(item, 'id'),
       studentId: readString(item, 'studentId'),
       fullName,
+      firstName,
+      middleName,
+      lastName,
       gender: readString(item, 'gender'),
       dateOfBirth: readString(item, 'dateOfBirth', 'date_of_birth'),
       bloodType: readString(item, 'bloodType', 'blood_type'),
       email: readString(item, 'email'),
-      phonePrimary: readString(item, 'phonePrimary', 'phone_primary', 'phone'),
+      phone: readString(item, 'phonePrimary', 'phone_primary', 'phone'),
+      religion: readString(item, 'religion'),
+      nationality: readString(item, 'nationality'),
       presentAddress: readString(item, 'presentAddress', 'present_address'),
+      permanentAddress: readString(item, 'permanentAddress', 'permanent_address'),
+      nidNumber: readString(item, 'nidNumber', 'nid_number'),
+      passportNumber: readString(item, 'passportNumber', 'passport_number'),
+      notes: readString(item, 'notes'),
+      status: readString(item, 'status'),
       createdAt: readString(item, 'createdAt', 'created_at'),
     };
   }

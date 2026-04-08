@@ -1,7 +1,9 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { SchoolManagementApiService } from '../../core/services/school-management-api.service';
+import { NotificationService } from '../../core/services/notification.service';
 import {
   extractList,
   getErrorMessage,
@@ -12,11 +14,13 @@ import {
   AcademicResourceMetric,
   AcademicResourcePageComponent,
 } from '../../shared/components/academic-resource-page/academic-resource-page.component';
+import { FormModalComponent } from '../../shared/components/form-modal/form-modal.component';
 
 interface EnrollmentRow {
   id: string;
   studentName: string;
   sectionId: string;
+  sectionLabel: string;
   academicYearLabel: string;
   rollNumber: string;
   enrollmentDate: string;
@@ -24,10 +28,15 @@ interface EnrollmentRow {
   status: string;
 }
 
+interface DropdownOption {
+  id: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-enrollments',
   standalone: true,
-  imports: [CommonModule, AcademicResourcePageComponent],
+  imports: [CommonModule, FormsModule, AcademicResourcePageComponent, FormModalComponent],
   template: `
     <app-academic-resource-page
       title="Enrollments"
@@ -38,6 +47,9 @@ interface EnrollmentRow {
       searchPlaceholder="Search by student, section, roll, or status"
       emptyTitle="No enrollments found"
       emptyMessage="Enrollment records will appear here as soon as the backend returns them."
+      addLabel="Enroll Student"
+      [canEdit]="true"
+      [canDelete]="false"
       [metrics]="metrics"
       [columns]="columns"
       [rows]="rows"
@@ -45,15 +57,102 @@ interface EnrollmentRow {
       [errorMessage]="errorMessage"
       [searchIndex]="searchIndex"
       (refresh)="loadData()"
+      (add)="openAddModal()"
+      (edit)="openTransferModal($event)"
     ></app-academic-resource-page>
+
+    <!-- Create Enrollment Modal -->
+    <app-form-modal
+      [open]="showFormModal"
+      title="Enroll Student"
+      confirmText="Enroll"
+      loadingText="Enrolling..."
+      [loading]="isSaving"
+      (close)="showFormModal = false"
+      (confirm)="saveForm()"
+    >
+      <div class="space-y-4">
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-slate-700">Student *</span>
+          <select [(ngModel)]="formData.student_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            <option value="">Select a student</option>
+            <option *ngFor="let s of studentOptions" [value]="s.id">{{ s.label }}</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-slate-700">Section *</span>
+          <select [(ngModel)]="formData.section_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            <option value="">Select a section</option>
+            <option *ngFor="let s of sectionOptions" [value]="s.id">{{ s.label }}</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-slate-700">Academic Year *</span>
+          <select [(ngModel)]="formData.academic_year_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            <option value="">Select an academic year</option>
+            <option *ngFor="let y of yearOptions" [value]="y.id">{{ y.label }}</option>
+          </select>
+        </label>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Roll Number *</span>
+            <input [(ngModel)]="formData.roll_number" type="number" placeholder="e.g. 1" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Enrollment Date *</span>
+            <input [(ngModel)]="formData.enrollment_date" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+        </div>
+      </div>
+    </app-form-modal>
+
+    <!-- Transfer Enrollment Modal -->
+    <app-form-modal
+      [open]="showTransferModal"
+      title="Transfer Enrollment"
+      [subtitle]="'Transfer ' + (transferringRow?.studentName || '') + ' to a new section.'"
+      confirmText="Transfer"
+      loadingText="Transferring..."
+      [loading]="isTransferring"
+      (close)="showTransferModal = false"
+      (confirm)="confirmTransfer()"
+    >
+      <div class="space-y-4">
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-slate-700">Current Section</span>
+          <input type="text" [value]="transferringRow?.sectionLabel || transferringRow?.sectionId || ''" disabled class="w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-500" />
+        </label>
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-slate-700">New Section *</span>
+          <select [(ngModel)]="transferData.section_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            <option value="">Select a new section</option>
+            <option *ngFor="let s of sectionOptions" [value]="s.id">{{ s.label }}</option>
+          </select>
+        </label>
+      </div>
+    </app-form-modal>
   `,
 })
 export class EnrollmentsComponent implements OnInit {
   private readonly api = inject(SchoolManagementApiService);
+  private readonly notify = inject(NotificationService);
 
   isLoading = true;
   errorMessage = '';
   rows: EnrollmentRow[] = [];
+
+  studentOptions: DropdownOption[] = [];
+  sectionOptions: DropdownOption[] = [];
+  yearOptions: DropdownOption[] = [];
+
+  showFormModal = false;
+  isSaving = false;
+  formData = { student_id: '', section_id: '', academic_year_id: '', roll_number: '', enrollment_date: '' };
+
+  showTransferModal = false;
+  isTransferring = false;
+  transferringRow: EnrollmentRow | null = null;
+  transferData = { section_id: '' };
 
   readonly columns: AcademicResourceColumn<EnrollmentRow>[] = [
     {
@@ -64,7 +163,7 @@ export class EnrollmentsComponent implements OnInit {
     },
     {
       label: 'Placement',
-      value: (row) => row.sectionId,
+      value: (row) => row.sectionLabel || row.sectionId,
       secondary: (row) => row.academicYearLabel,
     },
     {
@@ -97,7 +196,7 @@ export class EnrollmentsComponent implements OnInit {
   }
 
   readonly searchIndex = (row: EnrollmentRow): string =>
-    [row.studentName, row.sectionId, row.academicYearLabel, row.rollNumber, row.status, row.activeStatus].join(' ');
+    [row.studentName, row.sectionId, row.sectionLabel, row.academicYearLabel, row.rollNumber, row.status, row.activeStatus].join(' ');
 
   loadData(): void {
     this.isLoading = true;
@@ -107,22 +206,47 @@ export class EnrollmentsComponent implements OnInit {
       enrollmentsResponse: this.api.listEnrollments(),
       studentsResponse: this.api.listStudents(),
       yearsResponse: this.api.listAcademicYears(),
+      sectionsResponse: this.api.listSections(),
     }).subscribe({
-      next: ({ enrollmentsResponse, studentsResponse, yearsResponse }) => {
+      next: ({ enrollmentsResponse, studentsResponse, yearsResponse, sectionsResponse }) => {
+        const studentList = extractList<unknown>(studentsResponse);
         const studentMap = new Map(
-          extractList<unknown>(studentsResponse).map((item) => [
+          studentList.map((item) => [
             readString(item, 'id'),
             [readString(item, 'firstName'), readString(item, 'middleName'), readString(item, 'lastName')].filter(Boolean).join(' '),
           ])
         );
+
+        const yearList = extractList<unknown>(yearsResponse);
         const yearMap = new Map(
-          extractList<unknown>(yearsResponse).map((item) => [readString(item, 'id'), readString(item, 'label')])
+          yearList.map((item) => [readString(item, 'id'), readString(item, 'label')])
         );
+
+        const sectionList = extractList<unknown>(sectionsResponse);
+        const sectionMap = new Map(
+          sectionList.map((item) => [readString(item, 'id'), readString(item, 'name', 'label')])
+        );
+
+        this.studentOptions = studentList.map((item) => ({
+          id: readString(item, 'id'),
+          label: [readString(item, 'firstName'), readString(item, 'middleName'), readString(item, 'lastName')].filter(Boolean).join(' '),
+        }));
+
+        this.sectionOptions = sectionList.map((item) => ({
+          id: readString(item, 'id'),
+          label: readString(item, 'name', 'label') || readString(item, 'id'),
+        }));
+
+        this.yearOptions = yearList.map((item) => ({
+          id: readString(item, 'id'),
+          label: readString(item, 'label'),
+        }));
 
         this.rows = extractList<unknown>(enrollmentsResponse).map((item) => ({
           id: readString(item, 'id'),
           studentName: studentMap.get(readString(item, 'studentId')) || 'Student unavailable',
           sectionId: readString(item, 'sectionId'),
+          sectionLabel: sectionMap.get(readString(item, 'sectionId')) || readString(item, 'sectionId'),
           academicYearLabel: yearMap.get(readString(item, 'academicYearId')) || readString(item, 'academicYearId'),
           rollNumber: readString(item, 'rollNumber'),
           enrollmentDate: readString(item, 'enrollmentDate'),
@@ -135,6 +259,69 @@ export class EnrollmentsComponent implements OnInit {
         this.rows = [];
         this.errorMessage = getErrorMessage(error, 'Enrollments could not be loaded from the API.');
         this.isLoading = false;
+      },
+    });
+  }
+
+  openAddModal(): void {
+    this.formData = { student_id: '', section_id: '', academic_year_id: '', roll_number: '', enrollment_date: '' };
+    this.showFormModal = true;
+  }
+
+  openTransferModal(row: EnrollmentRow): void {
+    this.transferringRow = row;
+    this.transferData = { section_id: '' };
+    this.showTransferModal = true;
+  }
+
+  saveForm(): void {
+    if (!this.formData.student_id || !this.formData.section_id || !this.formData.academic_year_id || !this.formData.roll_number || !this.formData.enrollment_date) {
+      this.notify.warning('Please fill all required fields.');
+      return;
+    }
+    this.isSaving = true;
+    const payload: Record<string, unknown> = {
+      student_id: Number(this.formData.student_id),
+      section_id: Number(this.formData.section_id),
+      academic_year_id: Number(this.formData.academic_year_id),
+      roll_number: Number(this.formData.roll_number),
+      enrollment_date: this.formData.enrollment_date,
+    };
+
+    this.api.createEnrollment(payload).subscribe({
+      next: () => {
+        this.notify.success('Student enrolled successfully.');
+        this.showFormModal = false;
+        this.isSaving = false;
+        this.loadData();
+      },
+      error: (error) => {
+        this.notify.error(getErrorMessage(error, 'Failed to enroll student.'));
+        this.isSaving = false;
+      },
+    });
+  }
+
+  confirmTransfer(): void {
+    if (!this.transferringRow || !this.transferData.section_id) {
+      this.notify.warning('Please select a new section.');
+      return;
+    }
+    this.isTransferring = true;
+    const payload: Record<string, unknown> = {
+      section_id: Number(this.transferData.section_id),
+    };
+
+    this.api.transferEnrollment(this.transferringRow.id, payload).subscribe({
+      next: () => {
+        this.notify.success('Enrollment transferred successfully.');
+        this.showTransferModal = false;
+        this.isTransferring = false;
+        this.loadData();
+      },
+      error: (error) => {
+        this.notify.error(getErrorMessage(error, 'Failed to transfer enrollment.'));
+        this.isTransferring = false;
       },
     });
   }

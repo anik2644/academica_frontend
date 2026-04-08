@@ -33,6 +33,26 @@ export class ApiService {
     return this.http.patch<T>(this.buildUrl(endpoint), body ?? {});
   }
 
+  postMultipart<T>(endpoint: string, data: unknown, file?: File, fileField = 'profilePhoto'): Observable<T> {
+    const formData = new FormData();
+    const jsonBlob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    formData.append('data', jsonBlob);
+    if (file) {
+      formData.append(fileField, file, file.name);
+    }
+    return this.http.post<T>(this.buildUrl(endpoint), formData);
+  }
+
+  putMultipart<T>(endpoint: string, data: unknown, file?: File, fileField = 'profilePhoto'): Observable<T> {
+    const formData = new FormData();
+    const jsonBlob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    formData.append('data', jsonBlob);
+    if (file) {
+      formData.append(fileField, file, file.name);
+    }
+    return this.http.put<T>(this.buildUrl(endpoint), formData);
+  }
+
   delete<T>(endpoint: string, params?: ApiQueryParams): Observable<T> {
     return this.http.delete<T>(this.buildUrl(endpoint), {
       params: this.buildParams(params),

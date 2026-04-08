@@ -1,0 +1,58 @@
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+
+@Component({
+  selector: 'app-form-modal',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div *ngIf="open" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[5vh]" style="animation: fade-in-up 0.2s ease-out both">
+      <div class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm" (click)="close.emit()"></div>
+      <div class="relative w-full rounded-[24px] border border-slate-200 bg-white shadow-2xl"
+           [ngClass]="wide ? 'max-w-4xl' : 'max-w-xl'"
+           style="animation: fade-in-up 0.3s ease-out both">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">{{ title }}</h2>
+            <p *ngIf="subtitle" class="mt-0.5 text-sm text-slate-500">{{ subtitle }}</p>
+          </div>
+          <button (click)="close.emit()" class="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="px-6 py-5">
+          <ng-content></ng-content>
+        </div>
+        <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+          <button type="button" (click)="close.emit()" class="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+            Cancel
+          </button>
+          <button
+            type="button"
+            (click)="confirm.emit()"
+            [disabled]="loading || confirmDisabled"
+            class="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+            [ngClass]="danger ? 'bg-rose-600 hover:bg-rose-700' : 'bg-primary-600 hover:bg-primary-700'"
+          >
+            {{ loading ? loadingText : confirmText }}
+          </button>
+        </div>
+      </div>
+    </div>
+  `,
+})
+export class FormModalComponent {
+  @Input() open = false;
+  @Input() title = '';
+  @Input() subtitle = '';
+  @Input() confirmText = 'Save';
+  @Input() loadingText = 'Saving...';
+  @Input() loading = false;
+  @Input() confirmDisabled = false;
+  @Input() danger = false;
+  @Input() wide = false;
+  @Output() close = new EventEmitter<void>();
+  @Output() confirm = new EventEmitter<void>();
+}

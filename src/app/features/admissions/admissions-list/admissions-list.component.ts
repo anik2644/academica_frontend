@@ -1,8 +1,10 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { SchoolManagementApiService } from '../../../core/services/school-management-api.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import {
   extractItem,
   extractList,
@@ -11,6 +13,7 @@ import {
   readString,
 } from '../../../core/utils/api-response.utils';
 import { PageLoaderComponent } from '../../../shared/components/page-loader/page-loader.component';
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 
 interface AdmissionListRow {
   id: string;
@@ -39,7 +42,7 @@ interface FieldGroup {
 @Component({
   selector: 'app-admissions-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageLoaderComponent],
+  imports: [CommonModule, FormsModule, PageLoaderComponent, FormModalComponent, RouterModule],
   template: `
     <section class="relative overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_100px_-60px_rgba(15,23,42,0.5)]">
       <div class="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top_left,_rgba(21,101,192,0.22),_transparent_40%),radial-gradient(circle_at_top_right,_rgba(0,137,123,0.18),_transparent_34%),linear-gradient(120deg,_#0f172a,_#1e3a8a_55%,_#0f766e)]"></div>
@@ -50,6 +53,13 @@ interface FieldGroup {
               Applications
             </h1>
           </div>
+          <a routerLink="/admissions/new"
+            class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/25">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            New Admission
+          </a>
         </div>
 
         <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -117,44 +127,58 @@ interface FieldGroup {
               </div>
 
               <div *ngIf="!isListLoading" class="mt-4 space-y-3">
-                <button
+                <div
                   *ngFor="let admission of filteredAdmissions"
-                  type="button"
-                  (click)="selectAdmission(admission.id)"
-                  class="w-full rounded-2xl border px-4 py-4 text-left transition"
+                  class="rounded-2xl border px-4 py-4 transition"
                   [ngClass]="selectedAdmissionId === admission.id
                     ? 'border-primary-300 bg-primary-50 shadow-[0_18px_40px_-28px_rgba(21,101,192,0.55)]'
                     : 'border-slate-200 bg-white hover:border-primary-200 hover:bg-slate-50'"
                 >
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <div class="truncate text-sm font-semibold text-slate-900">
-                        {{ admission.studentName }}
+                  <button
+                    type="button"
+                    (click)="selectAdmission(admission.id)"
+                    class="w-full text-left"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="truncate text-sm font-semibold text-slate-900">
+                          {{ admission.studentName }}
+                        </div>
+                        <div class="mt-1 truncate text-xs uppercase tracking-[0.18em] text-slate-500">
+                          {{ admission.applicationNumber }}
+                        </div>
                       </div>
-                      <div class="mt-1 truncate text-xs uppercase tracking-[0.18em] text-slate-500">
-                        {{ admission.applicationNumber }}
+                      <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]" [ngClass]="statusClass(admission.applicationStatus)">
+                        {{ admission.applicationStatus || 'unknown' }}
+                      </span>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div class="text-xs uppercase tracking-[0.16em] text-slate-500">Applied On</div>
+                        <div class="mt-1 text-slate-800">{{ formatDateValue(admission.applicationDate) }}</div>
+                      </div>
+                      <div>
+                        <div class="text-xs uppercase tracking-[0.16em] text-slate-500">Payment</div>
+                        <div class="mt-1 text-slate-800">{{ formatLabel(admission.paymentStatus) }}</div>
                       </div>
                     </div>
-                    <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]" [ngClass]="statusClass(admission.applicationStatus)">
-                      {{ admission.applicationStatus || 'unknown' }}
-                    </span>
-                  </div>
 
-                  <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <div class="text-xs uppercase tracking-[0.16em] text-slate-500">Applied On</div>
-                      <div class="mt-1 text-slate-800">{{ formatDateValue(admission.applicationDate) }}</div>
+                    <div class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                      {{ admission.email || 'Email unavailable' }}
                     </div>
-                    <div>
-                      <div class="text-xs uppercase tracking-[0.16em] text-slate-500">Payment</div>
-                      <div class="mt-1 text-slate-800">{{ formatLabel(admission.paymentStatus) }}</div>
-                    </div>
-                  </div>
+                  </button>
 
-                  <div class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
-                    {{ admission.email || 'Email unavailable' }}
+                  <div class="mt-3 flex justify-end border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      (click)="openDeleteModal(admission)"
+                      class="rounded-xl px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
                   </div>
-                </button>
+                </div>
 
                 <div
                   *ngIf="!filteredAdmissions.length"
@@ -240,10 +264,26 @@ interface FieldGroup {
         </div>
       </div>
     </section>
+
+    <!-- Delete Confirmation Modal -->
+    <app-form-modal
+      [open]="showDeleteModal"
+      title="Delete Application"
+      [subtitle]="'Are you sure you want to delete application \\'' + (deletingAdmission?.applicationNumber || '') + '\\'?'"
+      confirmText="Delete"
+      loadingText="Deleting..."
+      [loading]="isDeleting"
+      [danger]="true"
+      (close)="showDeleteModal = false"
+      (confirm)="confirmDelete()"
+    >
+      <p class="text-sm text-slate-600">This action cannot be undone. The admission record for <strong>{{ deletingAdmission?.studentName }}</strong> and all related data will be permanently removed.</p>
+    </app-form-modal>
   `,
 })
 export class AdmissionsListComponent implements OnInit {
   private readonly api = inject(SchoolManagementApiService);
+  private readonly notify = inject(NotificationService);
 
   isListLoading = true;
   isDetailLoading = false;
@@ -256,6 +296,10 @@ export class AdmissionsListComponent implements OnInit {
   selectedDetail: AdmissionDetailRecord | null = null;
   academicYearMap = new Map<string, string>();
   classMap = new Map<string, string>();
+
+  showDeleteModal = false;
+  isDeleting = false;
+  deletingAdmission: AdmissionListRow | null = null;
 
   ngOnInit(): void {
     this.loadData();
@@ -489,6 +533,33 @@ export class AdmissionsListComponent implements OnInit {
           'Admission details could not be loaded from the API.'
         );
         this.isDetailLoading = false;
+      },
+    });
+  }
+
+  openDeleteModal(admission: AdmissionListRow): void {
+    this.deletingAdmission = admission;
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete(): void {
+    if (!this.deletingAdmission) return;
+    this.isDeleting = true;
+    this.api.deleteAdmission(this.deletingAdmission.id).subscribe({
+      next: () => {
+        this.notify.success('Application deleted successfully.');
+        this.showDeleteModal = false;
+        this.isDeleting = false;
+        if (this.selectedAdmissionId === this.deletingAdmission?.id) {
+          this.selectedAdmissionId = '';
+          this.selectedDetail = null;
+        }
+        this.deletingAdmission = null;
+        this.loadData();
+      },
+      error: (error) => {
+        this.notify.error(getErrorMessage(error, 'Failed to delete application.'));
+        this.isDeleting = false;
       },
     });
   }

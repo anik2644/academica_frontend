@@ -1,7 +1,9 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { SchoolManagementApiService } from '../../core/services/school-management-api.service';
+import { NotificationService } from '../../core/services/notification.service';
 import {
   extractList,
   getErrorMessage,
@@ -14,9 +16,13 @@ import {
   AcademicResourceMetric,
   AcademicResourcePageComponent,
 } from '../../shared/components/academic-resource-page/academic-resource-page.component';
+import { FormModalComponent } from '../../shared/components/form-modal/form-modal.component';
 
 interface ClassSubjectRow {
   id: string;
+  classId: string;
+  subjectId: string;
+  academicYearId: string;
   className: string;
   subjectName: string;
   subjectCode: string;
@@ -26,10 +32,15 @@ interface ClassSubjectRow {
   createdAt: string;
 }
 
+interface DropdownOption {
+  id: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-class-subjects',
   standalone: true,
-  imports: [CommonModule, AcademicResourcePageComponent],
+  imports: [CommonModule, FormsModule, AcademicResourcePageComponent, FormModalComponent],
   template: `
     <app-academic-resource-page
       title="Class Subjects"
@@ -40,6 +51,9 @@ interface ClassSubjectRow {
       searchPlaceholder="Search by class, subject, code, or year"
       emptyTitle="No class subjects available"
       emptyMessage="Mappings will appear here when the class-subjects endpoint returns valid data."
+      addLabel="Add Class Subject"
+      [canEdit]="true"
+      [canDelete]="true"
       [metrics]="metrics"
       [columns]="columns"
       [rows]="rows"
@@ -47,16 +61,95 @@ interface ClassSubjectRow {
       [errorMessage]="errorMessage"
       [searchIndex]="searchIndex"
       (refresh)="loadData()"
+      (add)="openAddModal()"
+      (edit)="openEditModal($event)"
+      (delete)="openDeleteModal($event)"
     ></app-academic-resource-page>
+
+    <!-- Add/Edit Modal -->
+    <app-form-modal
+      [open]="showFormModal"
+      [title]="editingRow ? 'Edit Class Subject' : 'Add Class Subject'"
+      [confirmText]="editingRow ? 'Update' : 'Create'"
+      [loadingText]="editingRow ? 'Updating...' : 'Creating...'"
+      [loading]="isSaving"
+      [wide]="true"
+      (close)="showFormModal = false"
+      (confirm)="saveForm()"
+    >
+      <div class="space-y-4">
+        <div class="grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Class *</span>
+            <select [(ngModel)]="formData.class_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <option [ngValue]="0" disabled>Select a class</option>
+              <option *ngFor="let opt of classOptions" [ngValue]="opt.id">{{ opt.label }}</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Subject *</span>
+            <select [(ngModel)]="formData.subject_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <option [ngValue]="0" disabled>Select a subject</option>
+              <option *ngFor="let opt of subjectOptions" [ngValue]="opt.id">{{ opt.label }}</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Academic Year *</span>
+            <select [(ngModel)]="formData.academic_year_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <option [ngValue]="0" disabled>Select an academic year</option>
+              <option *ngFor="let opt of yearOptions" [ngValue]="opt.id">{{ opt.label }}</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Full Marks *</span>
+            <input [(ngModel)]="formData.full_marks" type="number" placeholder="e.g. 100" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Pass Marks *</span>
+            <input [(ngModel)]="formData.pass_marks" type="number" placeholder="e.g. 40" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </label>
+        </div>
+      </div>
+    </app-form-modal>
+
+    <!-- Delete Confirmation -->
+    <app-form-modal
+      [open]="showDeleteModal"
+      title="Delete Class Subject"
+      [subtitle]="'Are you sure you want to delete the mapping for \\'' + (deletingRow?.subjectName || '') + '\\' in \\'' + (deletingRow?.className || '') + '\\'?'"
+      confirmText="Delete"
+      loadingText="Deleting..."
+      [loading]="isDeleting"
+      [danger]="true"
+      (close)="showDeleteModal = false"
+      (confirm)="confirmDelete()"
+    >
+      <p class="text-sm text-slate-600">This action cannot be undone. All related data may be affected.</p>
+    </app-form-modal>
   `,
 })
 export class ClassSubjectsComponent implements OnInit {
   private readonly api = inject(SchoolManagementApiService);
+  private readonly notify = inject(NotificationService);
 
   isLoading = true;
   errorMessage = '';
   rows: ClassSubjectRow[] = [];
   referenceSummary = '0 classes / 0 subjects / 0 years';
+
+  classOptions: DropdownOption[] = [];
+  subjectOptions: DropdownOption[] = [];
+  yearOptions: DropdownOption[] = [];
+
+  showFormModal = false;
+  showDeleteModal = false;
+  isSaving = false;
+  isDeleting = false;
+  editingRow: ClassSubjectRow | null = null;
+  deletingRow: ClassSubjectRow | null = null;
+  formData = { class_id: 0, subject_id: 0, academic_year_id: 0, full_marks: 0, pass_marks: 0 };
 
   readonly columns: AcademicResourceColumn<ClassSubjectRow>[] = [
     {
@@ -180,12 +273,101 @@ export class ClassSubjectsComponent implements OnInit {
         years.map((item) => [readString(item, 'id'), readString(item, 'label')])
       );
 
+      this.classOptions = classes.map((item) => ({
+        id: readString(item, 'id'),
+        label: readString(item, 'name'),
+      }));
+      this.subjectOptions = subjects.map((item) => ({
+        id: readString(item, 'id'),
+        label: readString(item, 'name'),
+      }));
+      this.yearOptions = years.map((item) => ({
+        id: readString(item, 'id'),
+        label: readString(item, 'label'),
+      }));
+
       this.referenceSummary = `${classMap.size} classes / ${subjectMap.size} subjects / ${yearMap.size} years`;
       this.rows = mappings.rows.map((item) =>
         this.mapClassSubject(item, classMap, subjectMap, yearMap)
       );
       this.errorMessage = mappings.error;
       this.isLoading = false;
+    });
+  }
+
+  openAddModal(): void {
+    this.editingRow = null;
+    this.formData = { class_id: 0, subject_id: 0, academic_year_id: 0, full_marks: 0, pass_marks: 0 };
+    this.showFormModal = true;
+  }
+
+  openEditModal(row: ClassSubjectRow): void {
+    this.editingRow = row;
+    this.formData = {
+      class_id: row.classId as unknown as number,
+      subject_id: row.subjectId as unknown as number,
+      academic_year_id: row.academicYearId as unknown as number,
+      full_marks: row.fullMarks ?? 0,
+      pass_marks: row.passMarks ?? 0,
+    };
+    this.showFormModal = true;
+  }
+
+  openDeleteModal(row: ClassSubjectRow): void {
+    this.deletingRow = row;
+    this.showDeleteModal = true;
+  }
+
+  saveForm(): void {
+    if (!this.formData.class_id || !this.formData.subject_id || !this.formData.academic_year_id) {
+      this.notify.warning('Please select class, subject, and academic year.');
+      return;
+    }
+    if (this.formData.full_marks == null || this.formData.pass_marks == null) {
+      this.notify.warning('Please fill full marks and pass marks.');
+      return;
+    }
+    this.isSaving = true;
+    const payload: Record<string, unknown> = {
+      class_id: this.formData.class_id,
+      subject_id: this.formData.subject_id,
+      academic_year_id: this.formData.academic_year_id,
+      full_marks: this.formData.full_marks,
+      pass_marks: this.formData.pass_marks,
+    };
+
+    const request$ = this.editingRow
+      ? this.api.updateClassSubject(this.editingRow.id, payload)
+      : this.api.createClassSubject(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.notify.success(this.editingRow ? 'Class subject updated.' : 'Class subject created.');
+        this.showFormModal = false;
+        this.isSaving = false;
+        this.loadData();
+      },
+      error: (error) => {
+        this.notify.error(getErrorMessage(error, 'Failed to save class subject.'));
+        this.isSaving = false;
+      },
+    });
+  }
+
+  confirmDelete(): void {
+    if (!this.deletingRow) return;
+    this.isDeleting = true;
+    this.api.deleteClassSubject(this.deletingRow.id).subscribe({
+      next: () => {
+        this.notify.success('Class subject deleted.');
+        this.showDeleteModal = false;
+        this.isDeleting = false;
+        this.loadData();
+      },
+      error: (error) => {
+        this.notify.error(getErrorMessage(error, 'Failed to delete class subject.'));
+        this.isDeleting = false;
+      },
     });
   }
 
@@ -205,6 +387,9 @@ export class ClassSubjectsComponent implements OnInit {
 
     return {
       id: readString(item, 'id'),
+      classId,
+      subjectId,
+      academicYearId,
       className:
         readString(classRecord, 'name') || classMap.get(classId) || 'Linked class unavailable',
       subjectName:
