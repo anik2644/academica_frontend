@@ -2,11 +2,9 @@ import { environment } from '../../../environments/environment';
 
 export const API_CONFIG = {
   apiBaseUrl: environment.apiBaseUrl,
-  swaggerUrl: environment.swaggerUrl,
 } as const;
 
 export const API_ENDPOINTS = {
-  swagger: API_CONFIG.swaggerUrl,
   academicYears: {
     root: '/academic-years',
     byId: (id: number | string) => `/academic-years/${id}`,

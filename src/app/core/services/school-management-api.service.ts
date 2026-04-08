@@ -38,10 +38,6 @@ import { ApiService } from './api.service';
 export class SchoolManagementApiService {
   constructor(private api: ApiService) {}
 
-  get swaggerUrl(): string {
-    return API_ENDPOINTS.swagger;
-  }
-
   listAcademicYears(params?: ApiQueryParams): Observable<ApiListResult<AcademicYear>> {
     return this.api.get(API_ENDPOINTS.academicYears.root, params);
   }
