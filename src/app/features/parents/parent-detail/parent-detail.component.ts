@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SchoolManagementApiService } from '../../../core/services/school-management-api.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { extractItem, getErrorMessage, readString } from '../../../core/utils/api-response.utils';
+import { extractItem, getErrorMessage, normalizeImageSource, readString } from '../../../core/utils/api-response.utils';
 import { ShimmerBlockComponent } from '../../../shared/components/shimmer-block/shimmer-block.component';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 
@@ -52,9 +52,11 @@ export class ParentDetailComponent implements OnInit {
       next: (response) => {
         this.detail = extractItem<Record<string, unknown>>(response);
         this.title = this.fullName(this.detail);
-        this.photoUrl = readString(this.detail, 'photoUrl', 'photo_url')
-          || readString(this.detail, 'photoBase64')
-          || '';
+        this.photoUrl = normalizeImageSource(
+          readString(this.detail, 'photoUrl', 'photo_url', 'profilePhotoUrl', 'profile_photo_url')
+            || readString(this.detail, 'photoBase64', 'photo_base64', 'profilePhotoBase64', 'profile_photo_base64')
+            || ''
+        );
         this.isLoading = false;
       },
       error: (error) => {
@@ -95,7 +97,11 @@ export class ParentDetailComponent implements OnInit {
     this.api.updateParent(this.parentId, {}, this.selectedPhotoFile || undefined).subscribe({
       next: (response) => {
         const updated = extractItem<Record<string, unknown>>(response);
-        this.photoUrl = readString(updated, 'photoUrl') || readString(updated, 'photoBase64') || this.photoFormUrl;
+        this.photoUrl = normalizeImageSource(
+          readString(updated, 'photoUrl', 'photo_url', 'profilePhotoUrl', 'profile_photo_url')
+            || readString(updated, 'photoBase64', 'photo_base64', 'profilePhotoBase64', 'profile_photo_base64')
+            || this.photoFormUrl
+        );
         this.showPhotoModal = false;
         this.photoUploading = false;
         this.selectedPhotoFile = null;

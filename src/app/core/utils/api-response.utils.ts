@@ -92,6 +92,20 @@ export function readRecord(source: unknown, key: string): UnknownRecord | null {
   return isRecord(value) ? value : null;
 }
 
+export function normalizeImageSource(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  if (trimmed.startsWith('data:') || /^https?:\/\//i.test(trimmed) || isRelativeImagePath(trimmed)) {
+    return trimmed;
+  }
+
+  const normalizedBase64 = trimmed.replace(/\s+/g, '');
+  return createObjectUrlFromBase64(normalizedBase64) || `data:${inferImageMimeType(normalizedBase64)};base64,${normalizedBase64}`;
+}
+
 function readValue(source: unknown, key: string): unknown {
   if (!isRecord(source)) {
     return undefined;
@@ -102,4 +116,47 @@ function readValue(source: unknown, key: string): unknown {
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === 'object' && value !== null;
+}
+
+function inferImageMimeType(base64: string): string {
+  if (base64.startsWith('/9j/')) {
+    return 'image/jpeg';
+  }
+
+  if (base64.startsWith('iVBORw0KGgo')) {
+    return 'image/png';
+  }
+
+  if (base64.startsWith('R0lGOD')) {
+    return 'image/gif';
+  }
+
+  if (base64.startsWith('UklGR')) {
+    return 'image/webp';
+  }
+
+  return 'image/jpeg';
+}
+
+function isRelativeImagePath(value: string): boolean {
+  return /^\/(?!9j\/)/.test(value);
+}
+
+function createObjectUrlFromBase64(base64: string): string {
+  if (typeof atob !== 'function' || typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+    return '';
+  }
+
+  try {
+    const byteString = atob(base64);
+    const byteArray = new Uint8Array(byteString.length);
+
+    for (let index = 0; index < byteString.length; index += 1) {
+      byteArray[index] = byteString.charCodeAt(index);
+    }
+
+    return URL.createObjectURL(new Blob([byteArray], { type: inferImageMimeType(base64) }));
+  } catch {
+    return '';
+  }
 }

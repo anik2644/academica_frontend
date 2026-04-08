@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { SchoolManagementApiService } from '../../../core/services/school-management-api.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { extractItem, extractList, getErrorMessage, readBoolean, readString } from '../../../core/utils/api-response.utils';
+import { extractItem, extractList, getErrorMessage, normalizeImageSource, readBoolean, readString } from '../../../core/utils/api-response.utils';
 import { ShimmerBlockComponent } from '../../../shared/components/shimmer-block/shimmer-block.component';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 
@@ -62,9 +62,11 @@ export class TeacherDetailComponent implements OnInit {
         this.academicQualifications = extractList(academic);
         this.otherQualifications = extractList(other);
         this.title = this.fullName(this.detail);
-        this.photoUrl = readString(this.detail, 'profilePhotoUrl', 'profile_photo_url')
-          || readString(this.detail, 'profilePhotoBase64')
-          || '';
+        this.photoUrl = normalizeImageSource(
+          readString(this.detail, 'profilePhotoUrl', 'profile_photo_url', 'photoUrl', 'photo_url')
+            || readString(this.detail, 'profilePhotoBase64', 'profile_photo_base64', 'photoBase64', 'photo_base64')
+            || ''
+        );
         this.isLoading = false;
       },
       error: (error) => {
@@ -105,7 +107,11 @@ export class TeacherDetailComponent implements OnInit {
     this.api.updateTeacher(this.teacherId, {}, this.selectedPhotoFile || undefined).subscribe({
       next: (response) => {
         const updated = extractItem<Record<string, unknown>>(response);
-        this.photoUrl = readString(updated, 'profilePhotoUrl') || readString(updated, 'profilePhotoBase64') || this.photoFormUrl;
+        this.photoUrl = normalizeImageSource(
+          readString(updated, 'profilePhotoUrl', 'profile_photo_url', 'photoUrl', 'photo_url')
+            || readString(updated, 'profilePhotoBase64', 'profile_photo_base64', 'photoBase64', 'photo_base64')
+            || this.photoFormUrl
+        );
         this.showPhotoModal = false;
         this.photoUploading = false;
         this.selectedPhotoFile = null;
