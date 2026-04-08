@@ -30,76 +30,8 @@ interface ClassRow {
   selector: 'app-classes',
   standalone: true,
   imports: [CommonModule, FormsModule, AcademicResourcePageComponent, FormModalComponent],
-  template: `
-    <app-academic-resource-page
-      title="Classes"
-      subtitle="A polished live catalogue of class levels, progression bands, and active teaching structure. This page reads directly from the classes API."
-      dataSourceLabel="GET /api/v1/classes"
-      tableTitle="Class Structure"
-      tableSubtitle="See class progression, level ordering, and active availability in one operational view."
-      searchPlaceholder="Search by class name, level, or description"
-      emptyTitle="No classes found"
-      emptyMessage="Create class records in the backend and they will be listed here."
-      addLabel="Add Class"
-      [canEdit]="true"
-      [canDelete]="true"
-      [metrics]="metrics"
-      [columns]="columns"
-      [rows]="rows"
-      [isLoading]="isLoading"
-      [errorMessage]="errorMessage"
-      [searchIndex]="searchIndex"
-      (refresh)="loadData()"
-      (add)="openAddModal()"
-      (edit)="openEditModal($event)"
-      (delete)="openDeleteModal($event)"
-    ></app-academic-resource-page>
-
-    <!-- Add/Edit Modal -->
-    <app-form-modal
-      [open]="showFormModal"
-      [title]="editingRow ? 'Edit Class' : 'Add Class'"
-      [confirmText]="editingRow ? 'Update' : 'Create'"
-      [loadingText]="editingRow ? 'Updating...' : 'Creating...'"
-      [loading]="isSaving"
-      (close)="showFormModal = false"
-      (confirm)="saveForm()"
-    >
-      <div class="space-y-4">
-        <label class="block">
-          <span class="mb-2 block text-sm font-medium text-slate-700">Name *</span>
-          <input [(ngModel)]="formData.name" type="text" placeholder="e.g. Class 1" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-        </label>
-        <label class="block">
-          <span class="mb-2 block text-sm font-medium text-slate-700">Numeric Level</span>
-          <input [(ngModel)]="formData.numeric_level" type="number" placeholder="e.g. 1" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-        </label>
-        <label class="block">
-          <span class="mb-2 block text-sm font-medium text-slate-700">Description</span>
-          <textarea [(ngModel)]="formData.description" rows="3" placeholder="Optional description" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea>
-        </label>
-        <label class="flex items-center gap-3 text-sm font-medium text-slate-700">
-          <input [(ngModel)]="formData.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
-          Set as active class
-        </label>
-      </div>
-    </app-form-modal>
-
-    <!-- Delete Confirmation -->
-    <app-form-modal
-      [open]="showDeleteModal"
-      title="Delete Class"
-      [subtitle]="'Are you sure you want to delete \\'' + (deletingRow?.name || '') + '\\'?'"
-      confirmText="Delete"
-      loadingText="Deleting..."
-      [loading]="isDeleting"
-      [danger]="true"
-      (close)="showDeleteModal = false"
-      (confirm)="confirmDelete()"
-    >
-      <p class="text-sm text-slate-600">This action cannot be undone. All related data may be affected.</p>
-    </app-form-modal>
-  `,
+  templateUrl: './classes.component.html',
+  styleUrl: './classes.component.css',
 })
 export class ClassesComponent implements OnInit {
   private readonly api = inject(SchoolManagementApiService);

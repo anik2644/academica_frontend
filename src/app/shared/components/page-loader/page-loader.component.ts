@@ -6,45 +6,8 @@ import { ShimmerBlockComponent } from '../shimmer-block/shimmer-block.component'
   selector: 'app-page-loader',
   standalone: true,
   imports: [CommonModule, ShimmerBlockComponent],
-  template: `
-    <div class="rounded-[24px] border border-slate-200/80 bg-white/95 p-6 shadow-sm backdrop-blur-sm"
-         style="animation: fade-in-up 0.4s ease-out both">
-
-      <!-- Header area with animated indicator -->
-      <div class="flex items-center gap-4">
-        <div class="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100">
-          <div class="absolute inset-0 rounded-2xl border border-primary-200/60"></div>
-          <!-- Animated rings -->
-          <div class="absolute inset-[-3px] rounded-[20px] border-2 border-primary-200/40"
-               style="animation: pulse-soft 2s ease-in-out infinite"></div>
-          <!-- Spinner -->
-          <svg class="h-5 w-5 text-primary-600" style="animation: spin-slow 1.2s linear infinite" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
-            <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-          </svg>
-        </div>
-        <div>
-          <div class="text-sm font-semibold text-slate-900">{{ title }}</div>
-          <div class="mt-0.5 text-sm text-slate-500">{{ message }}</div>
-        </div>
-      </div>
-
-      <!-- Skeleton content blocks with staggered animation -->
-      <div class="mt-6 space-y-3">
-        <app-shimmer-block
-          *ngFor="let block of blockHeights; let i = index"
-          [height]="block"
-          [delay]="i * 120"
-        ></app-shimmer-block>
-      </div>
-
-      <!-- Subtle progress bar -->
-      <div class="mt-5 h-1 overflow-hidden rounded-full bg-slate-100">
-        <div class="h-full w-1/3 rounded-full bg-gradient-to-r from-primary-400 to-primary-600"
-             style="animation: shimmer 1.8s ease-in-out infinite"></div>
-      </div>
-    </div>
-  `,
+  templateUrl: './page-loader.component.html',
+  styleUrl: './page-loader.component.css',
 })
 export class PageLoaderComponent {
   @Input() title = 'Loading data';

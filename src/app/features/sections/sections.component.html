@@ -1,0 +1,122 @@
+<app-academic-resource-page
+  title="Sections"
+  subtitle="A live operations board for section planning, room allocation, and teacher ownership. This page attempts to read the sections API and shows backend failures transparently when the data source is unhealthy."
+  dataSourceLabel="GET /api/v1/sections"
+  tableTitle="Section Allocation"
+  tableSubtitle="Inspect section identity, linked class, assigned year, capacity, room, and teacher context."
+  searchPlaceholder="Search by section, class, room, or teacher"
+  emptyTitle="No sections available"
+  emptyMessage="If the API returns sections they will appear here. Backend errors are shown inline instead of silently failing."
+  addLabel="Add Section"
+  [canEdit]="true"
+  [canDelete]="true"
+  [metrics]="metrics"
+  [columns]="columns"
+  [rows]="rows"
+  [isLoading]="isLoading"
+  [errorMessage]="errorMessage"
+  [searchIndex]="searchIndex"
+  (refresh)="loadData()"
+  (add)="openAddModal()"
+  (edit)="openEditModal($event)"
+  (delete)="openDeleteModal($event)"
+></app-academic-resource-page>
+
+<!-- Add/Edit Modal -->
+<app-form-modal
+  [open]="showFormModal"
+  [title]="editingRow ? 'Edit Section' : 'Add Section'"
+  [confirmText]="editingRow ? 'Update' : 'Create'"
+  [loadingText]="editingRow ? 'Updating...' : 'Creating...'"
+  [loading]="isSaving"
+  [wide]="true"
+  (close)="showFormModal = false"
+  (confirm)="saveForm()"
+>
+  <div class="space-y-4">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Name *</span>
+        <input [(ngModel)]="formData.name" type="text" placeholder="e.g. A" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Display Name</span>
+        <input [(ngModel)]="formData.display_name" type="text" placeholder="e.g. Section A" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Class *</span>
+        <select [(ngModel)]="formData.class_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <option value="">Select a class</option>
+          <option *ngFor="let opt of classOptions" [value]="opt.id">{{ opt.label }}</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Academic Year *</span>
+        <select [(ngModel)]="formData.academic_year_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <option value="">Select an academic year</option>
+          <option *ngFor="let opt of yearOptions" [value]="opt.id">{{ opt.label }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Capacity</span>
+        <input [(ngModel)]="formData.capacity" type="number" placeholder="e.g. 40" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Room Number</span>
+        <input [(ngModel)]="formData.room_number" type="text" placeholder="e.g. 101" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Class Teacher</span>
+      <select [(ngModel)]="formData.class_teacher_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <option value="">No teacher assigned</option>
+        <option *ngFor="let opt of teacherOptions" [value]="opt.id">{{ opt.label }}</option>
+      </select>
+    </label>
+    <label class="flex items-center gap-3 text-sm font-medium text-slate-700">
+      <input [(ngModel)]="formData.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+      Section is active
+    </label>
+  </div>
+</app-form-modal>
+
+<!-- Delete Confirmation -->
+<app-form-modal
+  [open]="showDeleteModal"
+  title="Delete Section"
+  [subtitle]="'Are you sure you want to delete ' + (deletingRow?.displayName || deletingRow?.name || '') + '?'"
+  confirmText="Delete"
+  loadingText="Deleting..."
+  [loading]="isDeleting"
+  [danger]="true"
+  (close)="showDeleteModal = false"
+  (confirm)="confirmDelete()"
+>
+  <p class="text-sm text-slate-600">This action cannot be undone. All related data may be affected.</p>
+</app-form-modal>
+
+<!-- Assign Teacher Modal -->
+<app-form-modal
+  [open]="showAssignTeacherModal"
+  title="Assign Teacher"
+  [subtitle]="'Assign a class teacher to ' + (assigningRow?.displayName || assigningRow?.name || '') + ''"
+  confirmText="Assign"
+  loadingText="Assigning..."
+  [loading]="isAssigning"
+  (close)="showAssignTeacherModal = false"
+  (confirm)="confirmAssignTeacher()"
+>
+  <div class="space-y-4">
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Teacher *</span>
+      <select [(ngModel)]="assignTeacherData.class_teacher_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <option value="">Select a teacher</option>
+        <option *ngFor="let opt of teacherOptions" [value]="opt.id">{{ opt.label }}</option>
+      </select>
+    </label>
+  </div>
+</app-form-modal>

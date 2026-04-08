@@ -31,8 +31,8 @@ export type BadgeType =
   selector: 'app-status-badge',
   standalone: true,
   imports: [CommonModule],
-  template: `<span [ngClass]="getBadgeClasses()">{{ status }}</span>`,
-  styles: [],
+  templateUrl: './status-badge.component.html',
+  styleUrl: './status-badge.component.css',
 })
 export class StatusBadgeComponent {
   @Input() status: BadgeType = 'pending';

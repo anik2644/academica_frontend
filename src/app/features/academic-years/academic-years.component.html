@@ -1,0 +1,68 @@
+<app-academic-resource-page
+  title="Academic Years"
+  tableTitle="Academic Year Registry"
+  tableSubtitle="Track the active year, year windows, and timeline history."
+  searchPlaceholder="Search by label or year dates"
+  emptyTitle="No academic years found"
+  emptyMessage="Create an academic year to get started."
+  addLabel="Add Academic Year"
+  [canEdit]="true"
+  [canDelete]="true"
+  [metrics]="metrics"
+  [columns]="columns"
+  [rows]="rows"
+  [isLoading]="isLoading"
+  [errorMessage]="errorMessage"
+  [searchIndex]="searchIndex"
+  (refresh)="loadData()"
+  (add)="openAddModal()"
+  (edit)="openEditModal($event)"
+  (delete)="openDeleteModal($event)"
+></app-academic-resource-page>
+
+<!-- Add/Edit Modal -->
+<app-form-modal
+  [open]="showFormModal"
+  [title]="editingRow ? 'Edit Academic Year' : 'Add Academic Year'"
+  [confirmText]="editingRow ? 'Update' : 'Create'"
+  [loadingText]="editingRow ? 'Updating...' : 'Creating...'"
+  [loading]="isSaving"
+  (close)="showFormModal = false"
+  (confirm)="saveForm()"
+>
+  <div class="space-y-4">
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Label *</span>
+      <input [(ngModel)]="formData.label" type="text" placeholder="e.g. 2025-2026" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+    </label>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Start Date *</span>
+        <input [(ngModel)]="formData.startDate" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">End Date *</span>
+        <input [(ngModel)]="formData.endDate" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <label class="flex items-center gap-3 text-sm font-medium text-slate-700">
+      <input [(ngModel)]="formData.isCurrent" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+      Set as current academic year
+    </label>
+  </div>
+</app-form-modal>
+
+<!-- Delete Confirmation -->
+<app-form-modal
+  [open]="showDeleteModal"
+  title="Delete Academic Year"
+  [subtitle]="'Are you sure you want to delete ' + (deletingRow?.label || '') + '?'"
+  confirmText="Delete"
+  loadingText="Deleting..."
+  [loading]="isDeleting"
+  [danger]="true"
+  (close)="showDeleteModal = false"
+  (confirm)="confirmDelete()"
+>
+  <p class="text-sm text-slate-600">This action cannot be undone. All related data may be affected.</p>
+</app-form-modal>

@@ -1,0 +1,21 @@
+<nav class="flex items-center space-x-2 text-sm" aria-label="Breadcrumb">
+  <ol class="flex space-x-2">
+    <li>
+      <a routerLink="/" class="text-primary-600 hover:text-primary-700">
+        Dashboard
+      </a>
+    </li>
+    <li *ngFor="let breadcrumb of breadcrumbs; let last = last">
+      <span class="text-gray-500">/</span>
+      <a
+        [routerLink]="breadcrumb.url"
+        [class.text-gray-500]="last"
+        [class.text-primary-600]="!last"
+        [class.hover:text-primary-700]="!last"
+        class="ml-2"
+      >
+        {{ breadcrumb.label }}
+      </a>
+    </li>
+  </ol>
+</nav>

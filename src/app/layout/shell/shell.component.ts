@@ -9,19 +9,7 @@ import { ToastContainerComponent } from '../../shared/components/toast-container
   selector: 'app-shell',
   standalone: true,
   imports: [CommonModule, RouterModule, ToolbarComponent, SidebarComponent, ToastContainerComponent],
-  template: `
-    <div class="flex h-screen flex-col bg-gray-50">
-      <app-toolbar></app-toolbar>
-      <div class="flex flex-1 overflow-hidden">
-        <app-sidebar></app-sidebar>
-        <main class="flex-1 overflow-auto">
-          <div class="container mx-auto max-w-7xl px-6 py-8">
-            <router-outlet></router-outlet>
-          </div>
-        </main>
-      </div>
-    </div>
-    <app-toast-container></app-toast-container>
-  `,
+  templateUrl: './shell.component.html',
+  styleUrl: './shell.component.css',
 })
 export class ShellComponent {}

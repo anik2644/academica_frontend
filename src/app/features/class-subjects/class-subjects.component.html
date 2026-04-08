@@ -1,0 +1,86 @@
+<app-academic-resource-page
+  title="Class Subjects"
+  subtitle="A live curriculum-mapping view for subject allocation by class and academic year. This screen reads directly from the backend and surfaces API errors instead of hiding them."
+  dataSourceLabel="GET /api/v1/class-subjects"
+  tableTitle="Class Subject Mapping"
+  tableSubtitle="Inspect which subjects are linked to which classes, under which academic year, with visible marks policy."
+  searchPlaceholder="Search by class, subject, code, or year"
+  emptyTitle="No class subjects available"
+  emptyMessage="Mappings will appear here when the class-subjects endpoint returns valid data."
+  addLabel="Add Class Subject"
+  [canEdit]="true"
+  [canDelete]="true"
+  [metrics]="metrics"
+  [columns]="columns"
+  [rows]="rows"
+  [isLoading]="isLoading"
+  [errorMessage]="errorMessage"
+  [searchIndex]="searchIndex"
+  (refresh)="loadData()"
+  (add)="openAddModal()"
+  (edit)="openEditModal($event)"
+  (delete)="openDeleteModal($event)"
+></app-academic-resource-page>
+
+<!-- Add/Edit Modal -->
+<app-form-modal
+  [open]="showFormModal"
+  [title]="editingRow ? 'Edit Class Subject' : 'Add Class Subject'"
+  [confirmText]="editingRow ? 'Update' : 'Create'"
+  [loadingText]="editingRow ? 'Updating...' : 'Creating...'"
+  [loading]="isSaving"
+  [wide]="true"
+  (close)="showFormModal = false"
+  (confirm)="saveForm()"
+>
+  <div class="space-y-4">
+    <div class="grid gap-4 sm:grid-cols-3">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Class *</span>
+        <select [(ngModel)]="formData.class_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <option [ngValue]="0" disabled>Select a class</option>
+          <option *ngFor="let opt of classOptions" [ngValue]="opt.id">{{ opt.label }}</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Subject *</span>
+        <select [(ngModel)]="formData.subject_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <option [ngValue]="0" disabled>Select a subject</option>
+          <option *ngFor="let opt of subjectOptions" [ngValue]="opt.id">{{ opt.label }}</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Academic Year *</span>
+        <select [(ngModel)]="formData.academic_year_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <option [ngValue]="0" disabled>Select an academic year</option>
+          <option *ngFor="let opt of yearOptions" [ngValue]="opt.id">{{ opt.label }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Full Marks *</span>
+        <input [(ngModel)]="formData.full_marks" type="number" placeholder="e.g. 100" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Pass Marks *</span>
+        <input [(ngModel)]="formData.pass_marks" type="number" placeholder="e.g. 40" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+  </div>
+</app-form-modal>
+
+<!-- Delete Confirmation -->
+<app-form-modal
+  [open]="showDeleteModal"
+  title="Delete Class Subject"
+  [subtitle]="'Are you sure you want to delete the mapping for ' + (deletingRow?.subjectName || '') + ' in ' + (deletingRow?.className || '') + '?'"
+  confirmText="Delete"
+  loadingText="Deleting..."
+  [loading]="isDeleting"
+  [danger]="true"
+  (close)="showDeleteModal = false"
+  (confirm)="confirmDelete()"
+>
+  <p class="text-sm text-slate-600">This action cannot be undone. All related data may be affected.</p>
+</app-form-modal>

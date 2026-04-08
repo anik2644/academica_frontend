@@ -1,0 +1,139 @@
+<app-academic-resource-page
+  title="Students"
+  subtitle="A live student registry for admissions follow-through, profile visibility, and demographic quick-scanning. This page pulls directly from your students endpoint."
+  dataSourceLabel="GET /api/v1/students"
+  tableTitle="Student Registry"
+  tableSubtitle="See student identity, age band, blood type, and contact footprint from the live backend."
+  searchPlaceholder="Search by student, ID, blood type, or address"
+  emptyTitle="No students found"
+  emptyMessage="Student records from the backend will appear here automatically."
+  [canView]="true"
+  [canEdit]="true"
+  [canDelete]="true"
+  [metrics]="metrics"
+  [columns]="columns"
+  [rows]="rows"
+  [isLoading]="isLoading"
+  [errorMessage]="errorMessage"
+  [searchIndex]="searchIndex"
+  (refresh)="loadData()"
+  (view)="viewStudent($event)"
+  (edit)="openEditModal($event)"
+  (delete)="openDeleteModal($event)"
+></app-academic-resource-page>
+
+<!-- Edit Modal -->
+<app-form-modal
+  [open]="showFormModal"
+  title="Edit Student"
+  confirmText="Update"
+  loadingText="Updating..."
+  [loading]="isSaving"
+  [wide]="true"
+  (close)="showFormModal = false"
+  (confirm)="saveForm()"
+>
+  <div class="space-y-4">
+    <div class="grid gap-4 sm:grid-cols-3">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">First Name *</span>
+        <input [(ngModel)]="formData.first_name" type="text" placeholder="First name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Middle Name</span>
+        <input [(ngModel)]="formData.middle_name" type="text" placeholder="Middle name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Last Name *</span>
+        <input [(ngModel)]="formData.last_name" type="text" placeholder="Last name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Gender</span>
+        <select [(ngModel)]="formData.gender" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <option value="">Select gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Date of Birth</span>
+        <input [(ngModel)]="formData.date_of_birth" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Status</span>
+        <select [(ngModel)]="formData.status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="graduated">Graduated</option>
+          <option value="transferred">Transferred</option>
+        </select>
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Email</span>
+        <input [(ngModel)]="formData.email" type="email" placeholder="student@example.com" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Phone</span>
+        <input [(ngModel)]="formData.phone" type="text" placeholder="Phone number" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Blood Type</span>
+        <input [(ngModel)]="formData.blood_type" type="text" placeholder="e.g. A+" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Religion</span>
+        <input [(ngModel)]="formData.religion" type="text" placeholder="Religion" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Nationality</span>
+        <input [(ngModel)]="formData.nationality" type="text" placeholder="Nationality" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Present Address</span>
+        <input [(ngModel)]="formData.present_address" type="text" placeholder="Present address" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Permanent Address</span>
+        <input [(ngModel)]="formData.permanent_address" type="text" placeholder="Permanent address" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">NID Number</span>
+        <input [(ngModel)]="formData.nid_number" type="text" placeholder="National ID number" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">Passport Number</span>
+        <input [(ngModel)]="formData.passport_number" type="text" placeholder="Passport number" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Notes</span>
+      <textarea [(ngModel)]="formData.notes" rows="3" placeholder="Additional notes about this student" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea>
+    </label>
+  </div>
+</app-form-modal>
+
+<!-- Deactivate Confirmation -->
+<app-form-modal
+  [open]="showDeleteModal"
+  title="Deactivate Student"
+  [subtitle]="'Are you sure you want to deactivate ' + (deletingRow?.fullName || '') + '?'"
+  confirmText="Deactivate"
+  loadingText="Deactivating..."
+  [loading]="isDeleting"
+  [danger]="true"
+  (close)="showDeleteModal = false"
+  (confirm)="confirmDeactivate()"
+>
+  <p class="text-sm text-slate-600">This student will be marked as inactive. They can be reactivated later if needed.</p>
+</app-form-modal>

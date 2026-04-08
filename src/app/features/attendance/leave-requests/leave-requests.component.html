@@ -1,0 +1,92 @@
+<app-academic-resource-page
+  title="Leave Requests"
+  subtitle="A live review board for student leave requests, request origins, approval state, and review ownership."
+  dataSourceLabel="GET /api/v1/attendance/leave-requests"
+  tableTitle="Leave Review Queue"
+  tableSubtitle="Track pending and approved leave applications with the related student, request dates, and review staff."
+  searchPlaceholder="Search by student, type, status, or requester"
+  emptyTitle="No leave requests found"
+  emptyMessage="Leave requests will appear here as soon as the backend returns them."
+  addLabel="Submit Leave Request"
+  [canEdit]="true"
+  [canDelete]="false"
+  [metrics]="metrics"
+  [columns]="columns"
+  [rows]="rows"
+  [isLoading]="isLoading"
+  [errorMessage]="errorMessage"
+  [searchIndex]="searchIndex"
+  (refresh)="loadData()"
+  (add)="openAddModal()"
+  (edit)="openReviewModal($event)"
+></app-academic-resource-page>
+
+<!-- Submit Leave Request Modal -->
+<app-form-modal
+  [open]="showFormModal"
+  title="Submit Leave Request"
+  confirmText="Submit"
+  loadingText="Submitting..."
+  [loading]="isSaving"
+  (close)="showFormModal = false"
+  (confirm)="saveForm()"
+>
+  <div class="space-y-4">
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Enrollment *</span>
+      <select [(ngModel)]="formData.enrollment_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <option value="" disabled>Select enrollment</option>
+        <option *ngFor="let option of enrollmentOptions" [value]="option.id">{{ option.label }}</option>
+      </select>
+    </label>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">From Date *</span>
+        <input [(ngModel)]="formData.from_date" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-slate-700">To Date *</span>
+        <input [(ngModel)]="formData.to_date" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+      </label>
+    </div>
+
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Leave Type *</span>
+      <input [(ngModel)]="formData.leave_type" type="text" placeholder="e.g. Sick, Personal, Family" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+    </label>
+
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Reason *</span>
+      <textarea [(ngModel)]="formData.reason" rows="3" placeholder="Provide a reason for the leave request" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea>
+    </label>
+  </div>
+</app-form-modal>
+
+<!-- Review Leave Request Modal -->
+<app-form-modal
+  [open]="showReviewModal"
+  title="Review Leave Request"
+  [subtitle]="'Review leave request from ' + (reviewingRow?.studentName || 'student') + ' (' + (reviewingRow?.period || '') + ')'"
+  confirmText="Submit Review"
+  loadingText="Submitting..."
+  [loading]="isReviewing"
+  (close)="showReviewModal = false"
+  (confirm)="submitReview()"
+>
+  <div class="space-y-4">
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Decision *</span>
+      <select [(ngModel)]="reviewData.status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <option value="" disabled>Select decision</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-slate-700">Remarks</span>
+      <textarea [(ngModel)]="reviewData.remarks" rows="3" placeholder="Optional review remarks" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea>
+    </label>
+  </div>
+</app-form-modal>

@@ -5,18 +5,8 @@ import { CommonModule } from '@angular/common';
   selector: 'app-page-header',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="page-header mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="page-title">{{ title }}</h1>
-        <p *ngIf="subtitle" class="mt-2 text-gray-600">{{ subtitle }}</p>
-      </div>
-      <div class="flex gap-2">
-        <ng-content select="[actions]"></ng-content>
-      </div>
-    </div>
-  `,
-  styles: [],
+  templateUrl: './page-header.component.html',
+  styleUrl: './page-header.component.css',
 })
 export class PageHeaderComponent {
   @Input() title = '';
