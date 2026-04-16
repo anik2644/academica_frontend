@@ -4,5 +4,14 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "info"
+  },
+
+   "/*": {
+    "target": "http://localhost:36813",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "Host": "localhost:36813"
+    }
   }
 }

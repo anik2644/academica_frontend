@@ -60,7 +60,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
-          "options": {},
+          "options": {
+            "host": "0.0.0.0",
+            "allowedHosts": true
+          },
           "configurations": {
             "production": {
               "buildTarget": "fusion-angular-tailwind-starter:build:production"
